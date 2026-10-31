@@ -23,12 +23,18 @@ const P = {
   flare: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/>',
   diamond: '<path d="M12 3l8 9-8 9-8-9z"/>',
   up: '<path d="M6 14l6-6 6 6"/>',
+  moon: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>',
+  pause: '<rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/>',
+  play: '<path d="M7 5l12 7-12 7z"/>',
+  github: '<path d="M9 19c-4 1.5-4-2-6-2.5M15 21v-3.5c0-1 .1-1.400-.5-2 2.800-.3 5.500-1.400 5.500-6a4.600 4.600 0 0 0-1.300-3.200 4.200 4.200 0 0 0-.1-3.200s-1.100-.3-3.500 1.300a12 12 0 0 0-6.200 0C6.500 2.800 5.400 3.100 5.400 3.100a4.200 4.200 0 0 0-.1 3.200A4.600 4.600 0 0 0 4 9.500c0 4.600 2.700 5.700 5.500 6-.6.6-.6 1.200-.5 2V21"/>',
   search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',
   moon: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>'
 };
 const media = (base, alt) => { const m = IMG[base]; if (!m) return '';
-  if (m[2] === 'mp4') return `<video class="m" src="/${base}.mp4" poster="/${base}.jpg" width="${m[0]}" height="${m[1]}" muted loop playsinline preload="none" aria-label="${alt}"></video>`;
-  return `<img class="m" src="/${base}.webp" width="${m[0]}" height="${m[1]}" alt="${alt}" loading="lazy" decoding="async">`; };
+  const zoom = `tabindex="0" role="button" aria-haspopup="dialog" data-label="${alt}"`;
+  if (m[2] === 'mp4') return `<button type="button" class="m mbtn" aria-haspopup="dialog" data-label="${alt}" aria-label="Ampliar vídeo: ${alt}"><video src="/${base}.mp4" poster="/${base}.jpg" width="${m[0]}" height="${m[1]}" muted loop playsinline preload="none" tabindex="-1" aria-hidden="true"></video></button>`;
+  return `<img class="m" src="/${base}.webp" width="${m[0]}" height="${m[1]}" alt="${alt}" aria-label="Ampliar imagem: ${alt}" loading="lazy" decoding="async" ${zoom}>`; };
 const ico = (n) => P[n] ? `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>` : '';
 const SEC_ICON = { halloween: 'pumpkin', beast: 'beast', status: 'flame', battlepass: 'ticket', skilltree: 'tree', perks: 'hex', memories: 'scroll', freedom: 'wings', market: 'coin', modifiers: 'sliders', balance: 'scales', shifters: 'bolt', rewards: 'trophy', qol: 'wrench', bugs: 'bug' };
 const CAT_ICON = { Evento: 'pumpkin', Combate: 'sword', 'Progressão': 'tree', Economia: 'coin', Balanceamento: 'scales', 'Qualidade de vida': 'wrench' };
@@ -57,28 +63,29 @@ function renderList(items) {
   let html = '<ul class="plain">';
   items.forEach((it) => {
     if (Array.isArray(it)) {
-      html += '<ul>' + it.map((s) => `<li class="item">${arrow(s)}</li>`).join('') + '</ul>';
+      html = html.replace(/<\/li>$/, '') + '<ul>' + it.map((s) => `<li class="item">${arrow(s)}</li>`).join('') + '</ul></li>';
     } else {
       html += `<li class="item">${arrow(it)}</li>`;
     }
   });
   return html + '</ul>';
 }
-function renderCards(items) {
+function renderCards(items, sub) {
+  const H = sub ? 'h4' : 'h3';
   return '<div class="cards">' + items.map((c) => {
     const lines = c.lines.length ? '<ul>' + c.lines.map((l) => `<li>${arrow(l)}</li>`).join('') + '</ul>' : '';
     const thumb = c.img ? `<div class="thumb">${media(c.img, c.n)}</div>` : '';
-    return `<article class="card item" style="--tc:${c.tc}">${thumb}<h4>${ico(tagIcon(c.tag))}${c.n}<span class="pill">${c.tag}</span></h4>${lines}</article>`;
+    return `<article class="card item" style="--tc:${c.tc}">${thumb}<${H}>${ico(tagIcon(c.tag))}${c.n}<span class="pill">${c.tag}</span></${H}>${lines}</article>`;
   }).join('') + '</div>';
 }
-function renderTable(head, rows) {
+function renderTable(head, rows, title) {
   const th = head.map((h) => `<th scope="col">${h}</th>`).join('');
   const body = rows.map((r) => '<tr class="item">' + r.map((c, i) => {
     const cell = (i === 0 && ROW_ICON[c] ? ico(ROW_ICON[c]) : '') + arrow(c);
     const cls = i === r.length - 1 && r.length > 1 && String(c).length > 28 ? ' class="wrap"' : '';
     return `<td${cls}>${cell}</td>`;
   }).join('') + '</tr>').join('');
-  return `<div class="tablewrap"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="tablewrap" tabindex="0" role="region" aria-label="${title ? title + ': ' : ''}${head.join(', ')}"><table><caption class="sr-only">${title || head.join(', ')}</caption><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function renderGallery(items) {
@@ -92,8 +99,8 @@ function renderBlock(b) {
   let inner = '';
   if (b.title) inner += `<h3>${b.title}</h3>`;
   if (b.t === 'list') inner += renderList(b.items);
-  if (b.t === 'cards') inner += renderCards(b.items);
-  if (b.t === 'table') inner += renderTable(b.head, b.rows);
+  if (b.t === 'cards') inner += renderCards(b.items, !!b.title);
+  if (b.t === 'table') inner += renderTable(b.head, b.rows, b.title);
   if (b.t === 'gallery') inner += renderGallery(b.items);
   if (b.t === 'note') inner += `<p class="note item">${b.text}</p>`;
   return `<div class="block">${inner}</div>`;
@@ -103,7 +110,7 @@ const content = $('#content');
 const nav = $('#nav');
 content.innerHTML = SECTIONS.map((s) => `
   <section class="sec" id="${s.id}" data-cat="${s.cat}">
-    <header><h2><span class="ico-badge">${ico(SEC_ICON[s.id])}</span>${s.title}</h2><span class="cat">${s.cat}</span></header>
+    <header><h2><span class="ico-badge">${ico(SEC_ICON[s.id])}</span>${s.title}</h2><span class="cat">${s.cat}</span><a class="anchor" href="#${s.id}" aria-label="Link direto para ${s.title}">#</a></header>
     <p class="intro">${s.intro}</p>
     ${s.blocks.map(renderBlock).join('')}
   </section>`).join('');
@@ -156,7 +163,7 @@ function applyFilters() {
         if (match) vis++;
       });
       /* subitens sem pai visível ficam escondidos junto do pai */
-      $$('ul.plain > ul', blk).forEach((u) => { u.hidden = !$$('.item', u).some((x) => !x.hidden); });
+      $$('ul.plain ul', blk).forEach((u) => { const any = $$('.item', u).some((x) => !x.hidden); u.hidden = !any; if (any) { const p = u.closest('li.item'); if (p && p.hidden) { p.hidden = false; vis++; } } });
       blk.hidden = vis === 0;
       secVisible += vis;
     });
@@ -164,7 +171,7 @@ function applyFilters() {
     if (titleMatch && secVisible === 0) {
       $$('.item', sec).forEach((it) => { it.hidden = false; });
       $$('.block', sec).forEach((b) => { b.hidden = false; });
-      $$('ul.plain > ul', sec).forEach((u) => { u.hidden = false; });
+      $$('ul.plain ul', sec).forEach((u) => { u.hidden = false; });
       secVisible = $$('.item', sec).length;
     }
     const visible = catOk && secVisible > 0;
@@ -177,11 +184,43 @@ function applyFilters() {
   $('#count').textContent = (term || activeRar !== 'Todas') ?  (shown === 0 ? '' : `${shown} resultado${shown > 1 ? 's' : ''}${term ? ' para “' + q.value.trim() + '”' : ''}${activeRar !== 'Todas' ? ' · ' + activeRar : ''}`) : '';
 }
 
-/* ---------- Tema ---------- */
+/* ---------- Preferências (tema e animações) ---------- */
 const root = document.documentElement;
-$('#theme').addEventListener('click', () => {
-  const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
-  root.dataset.theme = dark ? 'light' : 'dark';
+const store = { get: (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} } };
+const themeBtn = $('#theme');
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+function syncTheme() {
+  const d = isDark();
+  themeBtn.setAttribute('aria-pressed', String(d));
+  themeBtn.innerHTML = `${ico(d ? 'sun' : 'moon')}<span>${d ? 'Tema claro' : 'Tema escuro'}</span>`;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = d ? '#12150e' : '#3d5a38';
+}
+const savedTheme = store.get('aotr-theme');
+if (savedTheme) root.dataset.theme = savedTheme;
+syncTheme();
+themeBtn.addEventListener('click', () => { root.dataset.theme = isDark() ? 'light' : 'dark'; store.set('aotr-theme', root.dataset.theme); syncTheme(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncTheme);
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let paused = store.get('aotr-motion') ? store.get('aotr-motion') === 'off' : reduce;
+const motionBtn = $('#motion');
+function syncMotion() {
+  motionBtn.setAttribute('aria-pressed', String(paused));
+  motionBtn.innerHTML = `${ico(paused ? 'play' : 'pause')}<span>${paused ? 'Tocar animações' : 'Pausar animações'}</span>`;
+  root.classList.toggle('still', paused);
+  $$('.mbtn video', content).forEach((v) => { if (paused) v.pause(); else if (v.dataset.visible === '1') v.play().catch(() => {}); });
+}
+motionBtn.addEventListener('click', () => { paused = !paused; store.set('aotr-motion', paused ? 'off' : 'on'); syncMotion(); });
+
+/* ---------- Busca: atalhos ---------- */
+const clearBtn = $('#clear');
+const syncClear = () => { clearBtn.hidden = !q.value; };
+q.addEventListener('input', syncClear);
+clearBtn.addEventListener('click', () => { q.value = ''; syncClear(); applyFilters(); q.focus(); });
+q.addEventListener('keydown', (e) => { if (e.key === 'Escape' && q.value) { e.preventDefault(); q.value = ''; syncClear(); applyFilters(); } });
+addEventListener('keydown', (e) => {
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !document.querySelector('dialog[open]')) { e.preventDefault(); q.focus(); q.select(); }
 });
 
 /* ---------- Navegação ativa ---------- */
@@ -190,42 +229,66 @@ nav.addEventListener('click', (e) => {
   if (!a) return;
   e.preventDefault();
   const target = document.getElementById(a.getAttribute('href').slice(1));
-  if (target) { target.scrollIntoView(); try { history.replaceState(null, '', a.getAttribute('href')); } catch (_) {} }
+  if (!target) return;
+  target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  const h = target.querySelector('h2');
+  if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  try { history.replaceState(null, '', a.getAttribute('href')); } catch (_) {}
 });
-function markActive() {
+const header = $('header.top');
+function onScroll() {
   let current = null;
-  $$('section.sec').forEach((s) => { if (!s.hidden && s.getBoundingClientRect().top - 170 <= 0) current = s.id; });
-  $$('a', nav).forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
+  const off = header.getBoundingClientRect().bottom + 24;
+  $$('section.sec').forEach((s) => { if (!s.hidden && s.getBoundingClientRect().top - off <= 0) current = s.id; });
+  $$('a', nav).forEach((a) => {
+    const on = a.getAttribute('href') === '#' + current;
+    a.classList.toggle('active', on);
+    if (on) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+  });
+  header.classList.toggle('scrolled', scrollY > 8);
+  totop.classList.toggle('show', scrollY > 600);
 }
-addEventListener('scroll', markActive, { passive: true });
-markActive();
 const totop = $('#totop');
 totop.innerHTML = ico('up');
-totop.addEventListener('click', () => scrollTo({ top: 0 }));
-addEventListener('scroll', () => totop.classList.toggle('show', scrollY > 600), { passive: true });
+totop.addEventListener('click', () => { scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); $('#conteudo').focus({ preventScroll: true }); });
+addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+if (location.hash && document.getElementById(location.hash.slice(1))) document.getElementById(location.hash.slice(1)).scrollIntoView();
 
-/* ---------- Imagens: vídeos em loop e lightbox ---------- */
-const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---------- Vídeos: tocam só quando visíveis ---------- */
 const io = new IntersectionObserver((es) => es.forEach((e) => {
-  if (e.target.tagName !== 'VIDEO') return;
-  if (e.isIntersecting && !still) e.target.play().catch(() => {}); else e.target.pause();
+  const v = e.target;
+  v.dataset.visible = e.isIntersecting ? '1' : '0';
+  if (e.isIntersecting && !paused) v.play().catch(() => {}); else v.pause();
 }), { rootMargin: '120px' });
-$$('video.m').forEach((v) => { io.observe(v); if (still) v.controls = true; });
+$$('.mbtn video', content).forEach((v) => io.observe(v));
+syncMotion();
+
+/* ---------- Lightbox acessível ---------- */
 const lb = document.createElement('dialog');
 lb.id = 'lb';
-lb.innerHTML = '<button type="button" class="lb-x" aria-label="Fechar">\u2715</button><div class="lb-body"></div><p class="lb-cap"></p>';
+lb.setAttribute('aria-labelledby', 'lb-cap');
+lb.innerHTML = '<button type="button" class="lb-x" aria-label="Fechar imagem ampliada">' + '✕' + '</button><div class="lb-body"></div><p class="lb-cap" id="lb-cap"></p>';
 document.body.appendChild(lb);
 const lbBody = $('.lb-body', lb);
+let lastTrigger = null;
 function openLb(el) {
-  const cap = el.closest('figure, .card');
+  lastTrigger = el;
   lbBody.innerHTML = '';
-  const c = el.cloneNode(true);
-  c.removeAttribute('loading');
-  if (c.tagName === 'VIDEO') { c.controls = true; c.autoplay = true; c.preload = 'auto'; }
+  const src = el.tagName === 'BUTTON' ? el.querySelector('video') : el;
+  const c = src.cloneNode(true);
+  ['tabindex', 'role', 'aria-haspopup', 'loading', 'aria-label', 'aria-hidden'].forEach((k) => c.removeAttribute(k));
+  c.classList.remove('m'); c.classList.add('lb-media');
+  if (c.tagName === 'VIDEO') { c.controls = true; c.autoplay = !paused; c.preload = 'auto'; c.setAttribute('aria-label', el.dataset.label); }
   lbBody.appendChild(c);
-  $('.lb-cap', lb).textContent = (cap && (cap.querySelector('figcaption') || cap.querySelector('h4')) || { textContent: '' }).textContent.replace(/\s*\u25C6.*$/, '');
+  $('.lb-cap', lb).textContent = el.dataset.label || '';
   lb.showModal();
+  $('.lb-x', lb).focus();
 }
 content.addEventListener('click', (e) => { const m = e.target.closest('.m'); if (m) openLb(m); });
+content.addEventListener('keydown', (e) => {
+  const m = e.target.closest && e.target.closest('.m');
+  if (m && m.tagName !== 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openLb(m); }
+});
 lb.addEventListener('click', (e) => { if (e.target === lb || e.target.closest('.lb-x')) lb.close(); });
-lb.addEventListener('close', () => { lbBody.innerHTML = ''; });
+lb.addEventListener('close', () => { lbBody.innerHTML = ''; if (lastTrigger) lastTrigger.focus(); });
